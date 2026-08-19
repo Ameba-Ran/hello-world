@@ -5,7 +5,7 @@ Amebaran doc-hub **Downloads** page (ask your operator for the hub address)
 and place it in this folder before running the app:
 
 ```
-wheels/ameba_ai_sdk-0.3.0-py3-none-any.whl
+wheels/ameba_ai_sdk-0.4.0-py3-none-any.whl
 ```
 
 The app resolves the SDK from this exact path (see `pyproject.toml` /

@@ -19,4 +19,4 @@ package = false
 # this repo's wheels/ folder (see wheels/README.md). Bump the filename here
 # when you grab a newer wheel. The import name is still ``ameba_sdk``.
 [tool.uv.sources]
-ameba-ai-sdk = { path = "wheels/ameba_ai_sdk-0.3.0-py3-none-any.whl" }
+ameba-ai-sdk = { path = "wheels/ameba_ai_sdk-0.4.0-py3-none-any.whl" }

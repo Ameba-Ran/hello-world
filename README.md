@@ -201,7 +201,8 @@ the rest). It walks: catalog (`services`/`available`), `models`, LLM
 **multi-turn `chat_session`** (turn 2 recalls a name set in turn 1 — the gateway
 holds the history), embeddings, the full KB lifecycle
 (`create→upload→documents→retrieve→reindex→delete`) + RAG-grounded `chat`,
-a TTS→ASR round-trip, and the `speech_translate` pipeline. Account-lifecycle
+a TTS→ASR round-trip, and a compose-it-yourself speech translation
+(ASR → chat → TTS). Account-lifecycle
 calls (`register`/`rotate_key`/`rotate_user`) are shown but not executed.
 
 Known env caveats (not SDK bugs): direct `/v1/embeddings` needs the gateway's

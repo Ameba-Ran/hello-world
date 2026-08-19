@@ -143,12 +143,17 @@ def main() -> None:
         print("        tends to hallucinate — this round-trip only proves the bytes flow.")
         show("asr.transcribe(audio) → text  (round-trip)",
              lambda: ai.asr.transcribe(audio, filename="tts.wav", language="zh").text)
-        section("Pipeline — speech_translate (ASR → translate → TTS in one call)")
-        show("pipelines.speech_translate(audio, target)",
+        section("Speech translation — compose it yourself (ASR → chat → TTS)")
+        # There is deliberately no one-call pipeline for this: translation is
+        # a product feature, so the app owns the recipe.
+        show("asr.transcribe + llm.chat(translate prompt)",
              lambda: {
-                 "source_text": (st := ai.pipelines.speech_translate(
-                     audio, target="en", model=MODEL, synthesize=False)).source_text,
-                 "translated_text": st.translated_text,
+                 "source_text": (src := ai.asr.transcribe(
+                     audio, filename="tts.wav", language="zh").text),
+                 "translated_text": str(ai.llm.chat(
+                     "Translate the following text into en. "
+                     "Reply with the translation only.\n\n" + src,
+                     model=MODEL, temperature=0)),
              })
 
     # ── Account lifecycle (shown, NOT executed — they mutate credentials) ──
