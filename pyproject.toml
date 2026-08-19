@@ -1,0 +1,22 @@
+[project]
+name = "hello-world"
+version = "0.1.0"
+description = "Minimal app-server on ameba-ai-sdk: browser/phone -> this server -> cluster AI via SDK"
+requires-python = ">=3.9"
+dependencies = [
+    "ameba-ai-sdk",
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",   # UploadFile for /transcribe
+    "python-dotenv",      # auto-load .env so AMEBA_* need not be exported
+]
+
+# A runnable app, not a library — just resolve deps, don't build/install it.
+[tool.uv]
+package = false
+
+# ameba-ai-sdk is not on PyPI — resolve it from the wheel you download into
+# this repo's wheels/ folder (see wheels/README.md). Bump the filename here
+# when you grab a newer wheel. The import name is still ``ameba_sdk``.
+[tool.uv.sources]
+ameba-ai-sdk = { path = "wheels/ameba_ai_sdk-0.3.0-py3-none-any.whl" }
