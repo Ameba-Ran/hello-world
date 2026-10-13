@@ -5,7 +5,7 @@ API, and this server calls the cluster's AI services through the SDK. One
 ``AmebaAI`` client is built at startup from the ``AMEBA_*`` environment
 variables (the key you issued in the Console) and shared by every request.
 
-    export AMEBA_LLM_BASE_URL=http://<gateway-host>/porin   # porin AI gateway (Traefik 固定路徑)
+    export AMEBA_LLM_BASE_URL=http://<Console address>/porin/<site slug>   # the site's porin via the Console host
     export AMEBA_API_KEY=bsa_...                          # = a porin customer
     uv run python run.py          # or: uvicorn main:app --reload
 

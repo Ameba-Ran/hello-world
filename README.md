@@ -27,13 +27,14 @@ in Revenue Insight. Self-register one:
 
 ```python
 from ameba_sdk import AmebaAI
-AmebaAI.register("http://<gateway-host>/porin", "hello-world-app", "Hello World App")
+AmebaAI.register("http://<Console address>/porin/<site slug>", "hello-world-app", "Hello World App")
 ```
 
-…or `curl -X POST http://<gateway-host>/porin/v1/register -H 'Content-Type: application/json' \
+…or `curl -X POST http://<Console address>/porin/<site slug>/v1/register -H 'Content-Type: application/json' \
      -d '{"customer_id":"hello-world-app","display_name":"Hello World App"}'`.
-The key comes back **once** — store it. (`<gateway-host>` is the address your
-operator gives you.)
+The key comes back **once** — store it. (`<Console address>` is the address
+you open the Console with; `<site slug>` is the site's code — `k8s-ran` in the
+lab. A bare `/porin` without the site answers `404`.)
 
 ## 2. Point the app at the gateway
 
@@ -42,7 +43,7 @@ llm / asr / tts / embeddings, and `AMEBA_BASE_URL` back-fills every per-kind
 URL that is left unset:
 
 ```
-AMEBA_BASE_URL=http://<gateway-host>/porin     # porin, from a dev box
+AMEBA_BASE_URL=http://<Console address>/porin/<site slug>     # the site's porin, from a dev box
 AMEBA_API_KEY=bsa_...
 AMEBA_LLM_MODEL=Qwen/Qwen2.5-Omni-7B           # example — verify against /v1/models first
 ```
@@ -51,7 +52,7 @@ AMEBA_LLM_MODEL=Qwen/Qwen2.5-Omni-7B           # example — verify against /v1/
 cluster actually serves (entries with `"type": "llm"`) and fill that in:
 
 ```bash
-curl http://<gateway-host>/porin/v1/models -H "Authorization: Bearer <your bsa_ key>"
+curl http://<Console address>/porin/<site slug>/v1/models -H "Authorization: Bearer <your bsa_ key>"
 ```
 
 In-cluster (the Studio card, below) the gateway is
@@ -165,7 +166,7 @@ in the build context):
 # from the repo root, on an arm64 host (the cluster is arm64)
 docker build -t ameba-hello-world:v1 .
 docker run --rm -p 8000:8000 \
-  -e AMEBA_BASE_URL=http://<gateway-host>/porin \
+  -e AMEBA_BASE_URL=http://<Console address>/porin/<site slug> \
   -e AMEBA_API_KEY=bsa_... \
   -e AMEBA_LLM_MODEL=Qwen/Qwen2.5-Omni-7B \
   ameba-hello-world:v1
@@ -191,7 +192,7 @@ reachable on the node's NodePort as `hello-world-svc`.
 script that **exercises every feature of the SDK and prints each output**, to
 confirm end-to-end operation:
 
-    AMEBA_BASE_URL=http://<gateway-host>/porin \
+    AMEBA_BASE_URL=http://<Console address>/porin/<site slug> \
     AMEBA_API_KEY=bsa_xxxxxxxx \
     uv run python showcase.py
 
