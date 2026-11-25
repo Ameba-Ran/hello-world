@@ -1,7 +1,8 @@
 """Entrypoint — ``uv run python run.py`` (or ``uvicorn main:app --reload``).
 
-Reads AMEBA_BASE_URL / AMEBA_API_KEY from the environment (or a .env file, or
-~/.ameba/credentials.json). Host/port via HOST / PORT env.
+Loads .env (if there is one) into the environment first; the app then reads
+AMEBA_BASE_URL / AMEBA_API_KEY / AMEBA_LLM_MODEL from it. Host/port via HOST /
+PORT env.
 """
 from __future__ import annotations
 

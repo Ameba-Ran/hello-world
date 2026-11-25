@@ -4,13 +4,14 @@ A single script that walks the whole SDK surface so you can confirm each feature
 works and see exactly what it returns. Every feature is isolated in try/except,
 so one failure never stops the rest — you get a ✓/✗ line per feature.
 
-Run it (point at any gateway with a key you issued):
+Run it with the three values from the Console (API & Keys › AI API › AI SDK):
 
-    AMEBA_BASE_URL=http://127.0.0.1:8080 \\
-    AMEBA_API_KEY=bsa_xxxxxxxx \\
+    AMEBA_BASE_URL=http://<Console address>/heimdall/<site slug>/v1 \\
+    AMEBA_API_KEY=<your key> \\
+    AMEBA_LLM_MODEL=<model> \\
     uv run python showcase.py
 
-Optional: AMEBA_LLM_MODEL (default google/gemma-4-E4B-it).
+AMEBA_LLM_MODEL defaults to google/gemma-4-E4B-it, which your site may not run.
 """
 from __future__ import annotations
 
@@ -19,7 +20,7 @@ import traceback
 
 from ameba_sdk import AmebaAI, AmebaError
 
-MODEL = os.environ.get("AMEBA_LLM_MODEL", "google/gemma-4-E4B-it")
+MODEL = os.environ.get("AMEBA_LLM_MODEL") or "google/gemma-4-E4B-it"
 
 
 def section(title: str) -> None:
@@ -94,8 +95,6 @@ def main() -> None:
 
     # ── Embeddings ────────────────────────────────────────────────────────
     section("Embeddings")
-    print("  note: the direct /v1/embeddings endpoint needs the gateway's embed-upstream")
-    print("        key configured (GATEWAY_RAG_EMBED_*); RAG uses embeddings internally either way.")
     vecs = show("embeddings.embed([...]) → list[list[float]]",
                 lambda: ai.embeddings.embed(["語音辨識", "語音合成"], model="bge-m3"))
     if vecs:
@@ -156,15 +155,8 @@ def main() -> None:
                      model=MODEL, temperature=0)),
              })
 
-    # ── Account lifecycle (shown, NOT executed — they mutate credentials) ──
-    section("Account lifecycle (code shown — not run, they change your key)")
-    print("  • AmebaAI.register(base_url, customer_id=..., display_name=...,")
-    print("        contact_email=..., purpose=...)  → self-issues a key, saves it")
-    print("  • ai.rotate_key()                       → mints a replacement key")
-    print("  • ai.rotate_user('end-user-id')         → switch end-user identity")
-
     ai.close()
-    print(f"\n{'━' * 66}\ndone — every feature above ran against the live gateway.\n{'━' * 66}")
+    print(f"\n{'━' * 66}\ndone — every feature above ran against the site.\n{'━' * 66}")
 
 
 if __name__ == "__main__":
