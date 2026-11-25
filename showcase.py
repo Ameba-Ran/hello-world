@@ -68,7 +68,7 @@ def main() -> None:
     # ── LLM: every generation flavour ─────────────────────────────────────
     section("LLM — generate")
     show("llm.complete(prompt) → str",
-         lambda: ai.llm.complete("用一句話介紹台灣", model=MODEL, max_tokens=64,
+         lambda: ai.llm.complete("用一句話說明什麼是語音辨識", model=MODEL, max_tokens=64,
                                  reasoning_effort=NO_THINKING))
     show("llm.chat(prompt) → Reply",
          lambda: str(ai.llm.chat("把這句翻成英文：今天天氣很好", model=MODEL,
