@@ -44,6 +44,11 @@ logger = logging.getLogger("hello-world")
 # The site serves several models; pick one with AMEBA_LLM_MODEL. Empty counts
 # as unset (the container image declares it empty for the deploy card).
 MODEL = os.environ.get("AMEBA_LLM_MODEL") or "google/gemma-4-E4B-it"
+# Thinking models reason before they answer, and the reasoning counts against
+# the site's default answer budget (1024 tokens): a long think comes back with
+# an empty reply. This demo wants quick answers, so every chat call turns
+# thinking off; models that don't think ignore it.
+NO_THINKING = "none"
 
 
 @asynccontextmanager
@@ -118,7 +123,7 @@ async def models() -> dict:
 @app.post("/chat")
 async def chat(body: ChatIn) -> dict:
     try:
-        reply = _ai(app).llm.chat(body.prompt, model=body.model or MODEL)
+        reply = _ai(app).llm.chat(body.prompt, model=body.model or MODEL, reasoning_effort=NO_THINKING)
     except AmebaError as exc:
         raise HTTPException(502, str(exc)) from exc
     return {"reply": str(reply)}
@@ -216,7 +221,7 @@ async def ask(body: AskIn) -> dict:
         kw["retrieval"] = {"mode": body.mode}
     try:
         reply = _ai(app).llm.chat(
-            body.question, model=MODEL,
+            body.question, model=MODEL, reasoning_effort=NO_THINKING,
             use_rag=True, knowledge_bases=[body.kb_id], **kw,
         )
     except AmebaError as exc:

@@ -21,6 +21,10 @@ import traceback
 from ameba_sdk import AmebaAI, AmebaError
 
 MODEL = os.environ.get("AMEBA_LLM_MODEL") or "google/gemma-4-E4B-it"
+# Thinking models spend the site's default answer budget on reasoning and can
+# come back empty; every chat call here turns thinking off ("none" is ignored
+# by models that don't think).
+NO_THINKING = "none"
 
 
 def section(title: str) -> None:
@@ -64,19 +68,22 @@ def main() -> None:
     # ── LLM: every generation flavour ─────────────────────────────────────
     section("LLM — generate")
     show("llm.complete(prompt) → str",
-         lambda: ai.llm.complete("用一句話介紹台灣", model=MODEL, max_tokens=64))
+         lambda: ai.llm.complete("用一句話介紹台灣", model=MODEL, max_tokens=64,
+                                 reasoning_effort=NO_THINKING))
     show("llm.chat(prompt) → Reply",
-         lambda: str(ai.llm.chat("把這句翻成英文：今天天氣很好", model=MODEL)))
+         lambda: str(ai.llm.chat("把這句翻成英文：今天天氣很好", model=MODEL,
+                                     reasoning_effort=NO_THINKING)))
     show("llm.chat_json(messages, schema) → dict",
          lambda: ai.llm.chat_json(
              "列出台灣三個城市",
              schema={"type": "object",
                      "properties": {"cities": {"type": "array",
                                                "items": {"type": "string"}}}},
-             model=MODEL))
+             model=MODEL, reasoning_effort=NO_THINKING))
 
     def stream_demo():
-        parts = list(ai.llm.chat("寫一句關於海的短詩", model=MODEL, stream=True))
+        parts = list(ai.llm.chat("寫一句關於海的短詩", model=MODEL, stream=True,
+                                  reasoning_effort=NO_THINKING))
         return "".join(parts)
     show("llm.chat(stream=True) → iterator of deltas", stream_demo)
 
@@ -85,9 +92,9 @@ def main() -> None:
 
     def multi_turn():
         chat = ai.pipelines.chat_session(model=MODEL)
-        r1 = chat.send("我叫小明，請記住我的名字，只要回覆『好』。")
+        r1 = chat.send("我叫小明，請記住我的名字，只要回覆『好』。", reasoning_effort=NO_THINKING)
         # turn 2 sends ONLY this message — the gateway prepends turn 1
-        r2 = chat.send("我剛剛說我叫什麼名字？")
+        r2 = chat.send("我剛剛說我叫什麼名字？", reasoning_effort=NO_THINKING)
         return {"conversation_id": chat.conversation_id,
                 "turn1": str(r1)[:20], "turn2": str(r2)[:20],
                 "recalled_名字": "小明" in str(r2)}
@@ -127,6 +134,7 @@ def main() -> None:
                       for r in ai.kb.retrieve("高血壓的越南文", dataset_ids=[kb_id]).references])
         show("llm.chat(use_rag=True) → RAG-grounded answer",
              lambda: str(ai.llm.chat("高血壓的越南文是什麼？", model=MODEL,
+                                     reasoning_effort=NO_THINKING,
                                      use_rag=True, knowledge_bases=[kb_id]))[:60])
         show("kb.reindex(kb_id)", lambda: ai.kb.reindex(kb_id))
         show("kb.delete(kb_id)  (cleanup)", lambda: ai.kb.delete(kb_id) or "deleted")
@@ -152,7 +160,7 @@ def main() -> None:
                  "translated_text": str(ai.llm.chat(
                      "Translate the following text into en. "
                      "Reply with the translation only.\n\n" + src,
-                     model=MODEL, temperature=0)),
+                     model=MODEL, temperature=0, reasoning_effort=NO_THINKING)),
              })
 
     ai.close()
