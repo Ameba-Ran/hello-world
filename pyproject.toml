@@ -20,4 +20,4 @@ package = false
 # is a newer version, change the filename here to match. The import name is
 # ``ameba_sdk``.
 [tool.uv.sources]
-ameba-ai-sdk = { path = "wheels/ameba_ai_sdk-0.4.3-py3-none-any.whl" }
+ameba-ai-sdk = { path = "wheels/ameba_ai_sdk-0.4.4-py3-none-any.whl" }
