@@ -17,7 +17,7 @@ A step-by-step walkthrough of this example is in the Console's docs: open
 `ameba-ai-sdk` is not on PyPI. In the Console, open **Docs** from the user
 menu, download the wheel from the **Downloads** page and drop it into this
 repo's [`wheels/`](wheels/) folder. `pyproject.toml` installs the SDK from
-`wheels/ameba_ai_sdk-0.4.2-py3-none-any.whl`; if you download a newer
+`wheels/ameba_ai_sdk-0.4.3-py3-none-any.whl`; if you download a newer
 version, change the filename there to match.
 
 ## 1. Get a key, the Base URL and a model
