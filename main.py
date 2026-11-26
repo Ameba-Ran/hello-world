@@ -3,10 +3,12 @@
 The shape of a third-party MEC app: a browser / phone calls THIS server's HTTP
 API, and this server calls the cluster's AI services through the SDK. One
 ``AmebaAI`` client is built at startup from the ``AMEBA_*`` environment
-variables (the key you issued in the Console) and shared by every request.
+variables and shared by every request. The Console fills the three values in
+for you (API & Keys › AI API › AI SDK):
 
-    export AMEBA_LLM_BASE_URL=http://<Console address>/porin/<site slug>   # the site's porin via the Console host
-    export AMEBA_API_KEY=bsa_...                          # = a porin customer
+    export AMEBA_BASE_URL=http://<Console address>/heimdall/<site slug>/v1
+    export AMEBA_API_KEY=<your key>
+    export AMEBA_LLM_MODEL=<model>
     uv run python run.py          # or: uvicorn main:app --reload
 
 Endpoints (open http://localhost:8000 for a live demo page):
@@ -39,15 +41,20 @@ from ameba_sdk import AmebaAI, AmebaError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("hello-world")
 
-# The gateway serves several models; pick one (override with AMEBA_LLM_MODEL).
-MODEL = os.environ.get("AMEBA_LLM_MODEL", "google/gemma-4-E4B-it")
+# The site serves several models; pick one with AMEBA_LLM_MODEL. Empty counts
+# as unset (the container image declares it empty for the deploy card).
+MODEL = os.environ.get("AMEBA_LLM_MODEL") or "google/gemma-4-E4B-it"
+# Thinking models reason before they answer, and the reasoning counts against
+# the site's default answer budget (1024 tokens): a long think comes back with
+# an empty reply. This demo wants quick answers, so every chat call turns
+# thinking off; models that don't think ignore it.
+NO_THINKING = "none"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Build the client once from AMEBA_BASE_URL / AMEBA_API_KEY (or the
-    # ~/.ameba/credentials.json a previous register() wrote). Reused by all
-    # requests; closed on shutdown.
+    # Build the client once from the AMEBA_* environment variables. Reused by
+    # all requests; closed on shutdown.
     app.state.ai = AmebaAI.from_env()
     try:
         names = ", ".join(f"{f.name}[{f.kind}]" for f in app.state.ai.available())
@@ -116,7 +123,7 @@ async def models() -> dict:
 @app.post("/chat")
 async def chat(body: ChatIn) -> dict:
     try:
-        reply = _ai(app).llm.chat(body.prompt, model=body.model or MODEL)
+        reply = _ai(app).llm.chat(body.prompt, model=body.model or MODEL, reasoning_effort=NO_THINKING)
     except AmebaError as exc:
         raise HTTPException(502, str(exc)) from exc
     return {"reply": str(reply)}
@@ -214,7 +221,7 @@ async def ask(body: AskIn) -> dict:
         kw["retrieval"] = {"mode": body.mode}
     try:
         reply = _ai(app).llm.chat(
-            body.question, model=MODEL,
+            body.question, model=MODEL, reasoning_effort=NO_THINKING,
             use_rag=True, knowledge_bases=[body.kb_id], **kw,
         )
     except AmebaError as exc:

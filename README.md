@@ -1,62 +1,45 @@
 # hello-world — app-server on ameba-ai-sdk
 
-The smallest realistic shape of a third-party app on the Amebaran MEC:
+The smallest realistic shape of an app on an Ameba site:
 
 ```
-browser / phone  ──HTTP──▶  this app-server  ──ameba-sdk──▶  gateway ──▶ cluster AI
+browser / phone  ──HTTP──▶  this app-server  ──ameba-ai-sdk──▶  the site's AI
 ```
 
 Your app never talks to the models directly — it holds one `AmebaAI` client
 (built from your API key) and exposes its own small API.
 
-A step-by-step walkthrough of this example lives on the Amebaran doc-hub
-(Docs → Examples → Hello world walkthrough).
+A step-by-step walkthrough of this example is in the Console's docs: open
+**Docs › Examples** and pick the `Ameba-Ran/hello-world` card.
 
 ## 0. Get the SDK wheel
 
-`ameba-ai-sdk` is not on PyPI. Download the wheel from your Amebaran doc-hub
-**Downloads** page and drop it into this repo's [`wheels/`](wheels/)
-folder — `pyproject.toml` resolves the SDK from that exact path (bump the
-filename there when you grab a newer wheel).
+`ameba-ai-sdk` is not on PyPI. In the Console, open **Docs** from the user
+menu, download the wheel from the **Downloads** page and drop it into this
+repo's [`wheels/`](wheels/) folder. `pyproject.toml` installs the SDK from
+`wheels/ameba_ai_sdk-0.4.3-py3-none-any.whl`; if you download a newer
+version, change the filename there to match.
 
-## 1. Get a key
+## 1. Get a key, the Base URL and a model
 
-Every key is a **porin customer**: the gateway meters each request against the
-key's `customer_id`, so an app that holds its own key shows up as its own line
-in Revenue Insight. Self-register one:
+In the Console, open **API & Keys** from the user menu: the **AI API** page
+has everything. Pick the site at the top, then the **AI SDK** tab under
+**Examples** and a model, and copy the three values it shows. Your personal
+key works; for an app you deploy, click **New key** and give it a key of its
+own (a new key starts working within about a minute).
 
-```python
-from ameba_sdk import AmebaAI
-AmebaAI.register("http://<Console address>/porin/<site slug>", "hello-world-app", "Hello World App")
-```
+## 2. Point the app at the site
 
-…or `curl -X POST http://<Console address>/porin/<site slug>/v1/register -H 'Content-Type: application/json' \
-     -d '{"customer_id":"hello-world-app","display_name":"Hello World App"}'`.
-The key comes back **once** — store it. (`<Console address>` is the address
-you open the Console with; `<site slug>` is the site's code — `k8s-ran` in the
-lab. A bare `/porin` without the site answers `404`.)
-
-## 2. Point the app at the gateway
-
-Copy `.env.example` to `.env` (auto-loaded). One URL is enough — porin serves
-llm / asr / tts / embeddings, and `AMEBA_BASE_URL` back-fills every per-kind
-URL that is left unset:
+Copy `.env.example` to `.env` (`run.py` loads it) and fill in the three
+values:
 
 ```
-AMEBA_BASE_URL=http://<Console address>/porin/<site slug>     # the site's porin, from a dev box
-AMEBA_API_KEY=bsa_...
-AMEBA_LLM_MODEL=Qwen/Qwen2.5-Omni-7B           # example — verify against /v1/models first
+AMEBA_BASE_URL=http://<Console address>/heimdall/<site slug>/v1
+AMEBA_API_KEY=<your key>
+AMEBA_LLM_MODEL=<model>
 ```
 
-**Pick the model first**: the lineup changes over time, so list what your
-cluster actually serves (entries with `"type": "llm"`) and fill that in:
-
-```bash
-curl http://<Console address>/porin/<site slug>/v1/models -H "Authorization: Bearer <your bsa_ key>"
-```
-
-In-cluster (the Studio card, below) the gateway is
-`http://porin-ai-gateway-svc.default.svc.cluster.local:8080` instead.
+`GET <Base URL>/models` lists the models your key can use on that site.
 
 ## 3. Run
 
@@ -154,37 +137,22 @@ embedder is back to backfill the missing vectors.
 | POST | `/ask` | `ai.llm.chat(use_rag=True, retrieval={mode})` → 回答 + 引用 |
 | POST | `/kb/retrieve` | `ai.kb.retrieve()`(不經 LLM,直接拿 references,含 `parent_text`) |
 
-The full per-service SDK reference lives on the Amebaran doc-hub
-(Docs → Python SDK).
+The full SDK reference is in the Console's docs (**Docs › AI SDK**).
 
-## Container / Studio card
+## Container
 
-The app resolves the SDK from this repo's `wheels/` folder (the wheel must be
-in the build context):
-
-```bash
-# from the repo root, on an arm64 host (the cluster is arm64)
-docker build -t ameba-hello-world:v1 .
-docker run --rm -p 8000:8000 \
-  -e AMEBA_BASE_URL=http://<Console address>/porin/<site slug> \
-  -e AMEBA_API_KEY=bsa_... \
-  -e AMEBA_LLM_MODEL=Qwen/Qwen2.5-Omni-7B \
-  ameba-hello-world:v1
-```
-
-To run it on the cluster, import the image into k3s and create a
-`workload_templates` card with `section: "studio"` (it then appears on the
-Console's **Ameba AI Studio** page):
+The image installs the SDK from this repo's `wheels/` folder, so the wheel
+must be there before you build. The site's AI cluster is arm64:
 
 ```bash
-docker save ameba-hello-world:v1 | sudo k3s ctr images import -
+docker buildx build --platform linux/arm64 -t ameba-hello-world:v1 --load .
+docker run --rm -p 8000:8000 --env-file .env ameba-hello-world:v1
 ```
 
-The card's env points at the in-cluster gateway
-(`http://porin-ai-gateway-svc.default.svc.cluster.local:8080`) and carries the
-app's own `bsa_` key, which is what makes its LLM usage bill to
-`customer_id=hello-world-app`. `service_port` is 8000; the deployed service is
-reachable on the node's NodePort as `hello-world-svc`.
+`.dockerignore` keeps `.env` out of the image: the three `AMEBA_*` values are
+declared empty in the image and filled in where it runs. To run the app on a
+site, publish the image as an app card in **AI Apps** and deploy it from the
+Console; see **Docs › AI Apps** for the image requirements.
 
 ## 4. showcase.py — run every SDK feature at once
 
@@ -192,20 +160,20 @@ reachable on the node's NodePort as `hello-world-svc`.
 script that **exercises every feature of the SDK and prints each output**, to
 confirm end-to-end operation:
 
-    AMEBA_BASE_URL=http://<Console address>/porin/<site slug> \
-    AMEBA_API_KEY=bsa_xxxxxxxx \
+    AMEBA_BASE_URL=http://<Console address>/heimdall/<site slug>/v1 \
+    AMEBA_API_KEY=<your key> \
+    AMEBA_LLM_MODEL=<model> \
     uv run python showcase.py
 
 Each feature is isolated (try/except → a ✓/✗ line each, one failure never stops
 the rest). It walks: catalog (`services`/`available`), `models`, LLM
 (`complete`/`chat`/`chat_json`/`chat(stream=True)`),
-**multi-turn `chat_session`** (turn 2 recalls a name set in turn 1 — the gateway
+**multi-turn `chat_session`** (turn 2 recalls a name set in turn 1 — the site
 holds the history), embeddings, the full KB lifecycle
 (`create→upload→documents→retrieve→reindex→delete`) + RAG-grounded `chat`,
 a TTS→ASR round-trip, and a compose-it-yourself speech translation
-(ASR → chat → TTS). Account-lifecycle
-calls (`register`/`rotate_key`/`rotate_user`) are shown but not executed.
+(ASR → chat → TTS). What runs depends on the
+services the site has turned on; a missing one shows as a ✗ line.
 
-Known env caveats (not SDK bugs): direct `/v1/embeddings` needs the gateway's
-`GATEWAY_RAG_EMBED_*` upstream key (RAG embeddings work regardless); Whisper
-hallucinates on synthetic TTS audio (real speech transcribes fine).
+Speech recognition may mishear the synthetic TTS audio of the round-trip;
+real speech transcribes fine.
