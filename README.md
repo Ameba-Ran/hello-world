@@ -57,7 +57,7 @@ curl -X POST localhost:8000/chat -H 'Content-Type: application/json' \
 curl -X POST localhost:8000/transcribe -F file=@audio.wav -F language=zh
 curl -X POST localhost:8000/transcribe -F file=@taigi.wav -F engine=taigi
 curl -X POST localhost:8000/speak -H 'Content-Type: application/json' \
-     -d '{"prompt":"你好"}' --output out.wav
+     -d '{"prompt":"Hello from Ameba"}' --output out.mp3
 curl -X POST localhost:8000/embed -H 'Content-Type: application/json' \
      -d '{"texts":["血壓","頭痛"]}'
 curl localhost:8000/models
@@ -130,7 +130,7 @@ embedder is back to backfill the missing vectors.
 | GET  | `/models` | `ai.llm.models()` |
 | POST | `/chat` | `ai.llm.chat` |
 | POST | `/transcribe` | `ai.asr.transcribe` (engine=whisper/taigi) |
-| POST | `/speak` | `ai.tts.speak` → audio/wav |
+| POST | `/speak` | `ai.tts.speak` → MP3 (`audio/mpeg`) |
 | POST | `/embed` | `ai.embeddings.embed` |
 | POST | `/kb/setup` | `ai.kb.create` + `ai.kb.upload`(建 KB + 索引文字) |
 | POST | `/kb/upload` | `ai.kb.upload`(真實檔案 bytes;pdf/docx/… 皆可) |
