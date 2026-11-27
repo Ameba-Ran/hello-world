@@ -19,7 +19,7 @@ Endpoints (open http://localhost:8000 for a live demo page):
     GET  /models      LLM models available to this key
     POST /chat        {"prompt","model"?}              -> {"reply"}
     POST /transcribe  multipart: file, engine?, language?  -> {"text"}
-    POST /speak       {"text"}                         -> audio/wav
+    POST /speak       {"prompt"}                       -> audio/mpeg (MP3)
     POST /embed       {"texts": ["...", "..."]}        -> {"dims","vectors"}
     POST /kb/setup    {"name","text","chunking"?}       -> {"kb_id","chunks","embedded"}
     POST /kb/upload   multipart: kb_id, file             -> {"doc_id","chunk_count","embedded","status"}
@@ -115,7 +115,11 @@ async def services() -> dict:
 
 @app.get("/models")
 async def models() -> dict:
-    return {"models": _ai(app).llm.models()}
+    try:
+        available = _ai(app).llm.models()
+    except AmebaError as exc:
+        raise HTTPException(502, str(exc)) from exc
+    return {"models": available}
 
 
 # --- the four AI legs ---------------------------------------------------------
@@ -146,10 +150,10 @@ async def transcribe(
 @app.post("/speak")
 async def speak(body: ChatIn) -> Response:
     try:
-        wav = _ai(app).tts.speak(body.prompt)
+        mp3 = _ai(app).tts.speak(body.prompt, response_format="mp3")
     except AmebaError as exc:
         raise HTTPException(502, str(exc)) from exc
-    return Response(content=wav, media_type="audio/wav")
+    return Response(content=mp3, media_type="audio/mpeg")
 
 
 @app.post("/embed")
